@@ -5,6 +5,11 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from app.api.dependencies import get_current_user
 from app.models.product import ProductCreate, ProductUpdate, ProductInDB
 
+import csv
+import io
+from fastapi import UploadFile, File
+from app.models.product import ImportResult, ImportRowResult
+
 router = APIRouter()
 db = firestore.client()
 
@@ -95,3 +100,91 @@ def delete_product(product_id: str, current_user: dict = Depends(get_current_use
 
     product_ref.delete()
     return None
+
+
+
+
+
+@router.post("/import/csv", response_model=ImportResult)
+async def import_products_from_csv(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Idempotently imports products from a CSV file.
+    - Validates each row.
+    - Upserts (creates or updates) products based on SKU.
+    - Uses a batch write for efficiency.
+    - Returns a detailed report of the operation.
+    """
+    # --- 1. Read and Validate CSV content ---
+    content = await file.read()
+    try:
+        content_text = content.decode('utf-8')
+        reader = csv.DictReader(io.StringIO(content_text))
+        rows = list(reader)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid CSV file format. Must be UTF-8 encoded.")
+
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV file is empty.")
+
+    # --- 2. Fetch Existing Products for Upsert Logic ---
+    products_ref = db.collection('products')
+    existing_products_docs = products_ref.stream()
+    # Create a map of {sku: {id, version}} for quick lookups
+    existing_sku_map = {doc.to_dict()['sku']: {'id': doc.id, 'version': doc.to_dict()['version']} for doc in existing_products_docs}
+
+    # --- 3. Process Rows and Prepare Batch ---
+    batch = db.batch()
+    results = []
+    successful_creates = 0
+    successful_updates = 0
+
+    for i, row in enumerate(rows):
+        row_num = i + 2  # Account for header row
+
+        sku = row.get("sku")
+        if not sku:
+            results.append(ImportRowResult(row_number=row_num, status="error", details="SKU is missing."))
+            continue
+
+        try:
+            # Pydantic validation for the rest of the fields
+            product_data = ProductCreate(**row)
+        except Exception as e:
+            results.append(ImportRowResult(row_number=row_num, status="error", details=str(e), sku=sku))
+            continue
+
+        # --- 4. Logic for Create vs. Update ---
+        if sku in existing_sku_map:
+            # UPDATE logic
+            product_info = existing_sku_map[sku]
+            doc_ref = products_ref.document(product_info['id'])
+            update_payload = product_data.dict()
+            update_payload['version'] = product_info['version'] + 1
+            batch.update(doc_ref, update_payload)
+
+            results.append(ImportRowResult(row_number=row_num, status="updated", sku=sku))
+            successful_updates += 1
+        else:
+            # CREATE logic
+            new_doc_ref = products_ref.document()
+            product_to_save = ProductInDB(id=new_doc_ref.id, version=1, **product_data.dict())
+            batch.set(new_doc_ref, product_to_save.dict())
+
+            results.append(ImportRowResult(row_number=row_num, status="created", sku=sku))
+            successful_creates += 1
+
+    # --- 5. Commit Batch and Return Result ---
+    if successful_creates > 0 or successful_updates > 0:
+        batch.commit()
+
+    error_results = [res for res in results if res.status == 'error']
+
+    return ImportResult(
+        processed_rows=len(rows),
+        successful_creates=successful_creates,
+        successful_updates=successful_updates,
+        errors=error_results
+    )

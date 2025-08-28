@@ -1,0 +1,6 @@
+name,sku,category,quantity,unit_price
+Espresso Beans,EB-001,Coffee,50,22.50
+Cold Brew Concentrate,CBC-002,Coffee,25,18.00
+Invalid Product,,Invalid,10,10.00
+Organic Green Tea,OGT-001,Beverages,75,6.50
+Product with bad data,BDP-003,Snacks,-5,12.00

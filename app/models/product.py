@@ -22,3 +22,18 @@ class ProductUpdate(BaseModel):
 class ProductInDB(ProductBase):
     id: str
     version: int = 1
+
+
+
+
+class ImportRowResult(BaseModel):
+    row_number: int
+    status: str  # e.g., "created", "updated", "error"
+    details: Optional[str] = None
+    sku: Optional[str] = None
+
+class ImportResult(BaseModel):
+    processed_rows: int
+    successful_creates: int
+    successful_updates: int
+    errors: list[ImportRowResult]
