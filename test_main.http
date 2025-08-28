@@ -1,0 +1,35 @@
+# Test your FastAPI endpoints
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/hello/User
+Accept: application/json
+
+###
+
+### Register a new user
+POST http://127.0.0.1:8000/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "password": "aSecurePassword123"
+}
+
+### Sign in a user to get an ID Token
+POST https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBY0-K70rnulLzQKfqgBNHDV70Uz6fTsrg
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "password": "aSecurePassword123",
+  "returnSecureToken": true
+}
+
+
+### Access the protected /users/me endpoint
+GET http://127.0.0.1:8000/users/me
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjkyZTg4M2NjNDY2M2E2MzMyYWRhNmJjMWU0N2YzZmY1ZTRjOGI1ZDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbXNtZS1pbnZlbnRvcnktbGl0ZSIsImF1ZCI6Im1zbWUtaW52ZW50b3J5LWxpdGUiLCJhdXRoX3RpbWUiOjE3NTYzODM1ODAsInVzZXJfaWQiOiJ5bWc1cWRuSWdzUXlMRjZiRUFuUmpRVkhnVTIzIiwic3ViIjoieW1nNXFkbklnc1F5TEY2YkVBblJqUVZIZ1UyMyIsImlhdCI6MTc1NjM4MzU4MCwiZXhwIjoxNzU2Mzg3MTgwLCJlbWFpbCI6InRlc3R1c2VyMUBleGFtcGxlLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJ0ZXN0dXNlcjFAZXhhbXBsZS5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.j1i49AEQJvAPwZNLAeDTj6lL1LIGoPnSGG6XLIplC30oP6P_vfMLnaeB8GnigNV7vdi2tAVCYxP5YNwVDonHbEOQx2_smed462y2si8NuooMKrj_KAp7tRz9wcWxnoLC0xiHfY8lqNXo46bSxd5sNuyjgwNC9_8SscQjE13oTQaFLESK4J36Uzh6TzsgX-JDM1-_QzaSrVYVlOumTIHd8Kf5uvUP-GXBDWs7pl_UEgaY9Tt_XXWYWpMCMiWFaxYMC6UO_RevGpfIPa3FUfA2HJ0AI8eJNSTDkndsoePBlBjfHIUkVaFnoP_M6hVMml9jKksu6yVY6btkNhbB9V0apw
