@@ -10,6 +10,8 @@ import io
 from fastapi import UploadFile, File
 from app.models.product import ImportResult, ImportRowResult
 
+from typing import Optional
+
 router = APIRouter()
 db = firestore.client()
 
@@ -33,10 +35,33 @@ def create_product(product_data: ProductCreate, current_user: dict = Depends(get
     return product_to_save
 
 
+
 @router.get("", response_model=list[ProductInDB])
-def list_products(current_user: dict = Depends(get_current_user)):
-    products_ref = db.collection('products').stream()
-    return [doc.to_dict() for doc in products_ref]
+def list_products(
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Retrieve a list of all products, with optional search by name and filter by category.
+    """
+    products_ref = db.collection('products')
+    query = products_ref
+
+    # Firestore does not support case-insensitive or partial text search directly.
+    # A simple "starts-with" search can be implemented like this.
+    # For full-text search, a third-party service like Algolia or Elasticsearch is recommended.
+    if search:
+        # This query finds products where the name is >= search and < search + '\uf8ff'
+        # It's the standard way to do a "starts-with" query in Firestore.
+        query = query.where(filter=FieldFilter("name", ">=", search)).where(filter=FieldFilter("name", "<=", search + '\uf8ff'))
+
+    if category:
+        query = query.where(filter=FieldFilter("category", "==", category))
+
+    docs = query.stream()
+    products = [doc.to_dict() for doc in docs]
+    return products
 
 
 @router.get("/{product_id}", response_model=ProductInDB)
