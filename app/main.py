@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.firebase_config import initialize_firebase
 from app.core.monitoring import logging_middleware, get_metrics
 from app.api.dependencies import get_current_user
+import os
 
 # Initialize Firebase FIRST, before any other app imports that might use it
 initialize_firebase()
@@ -10,18 +11,16 @@ initialize_firebase()
 # NOW, import the routers that depend on the initialized app
 from app.api.routes import auth, users, products, dashboard
 
-app = FastAPI(title="MSME Inventory Lite API")
 
-# Add the logging middleware FIRST. It will wrap all other processing.
-# Note: The assignment of request.state.user happens in get_current_user,
-# so the logger will pick it up after the dependency has run for a protected route.
+app = FastAPI(title="MSME Inventory Lite API")
 app.middleware("http")(logging_middleware)
 
-# Add CORS Middleware next
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+# --- Updated CORS Middleware ---
+# Reads allowed origins from an environment variable for production,
+# but still allows localhost for local development.
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+origins = [origin.strip() for origin in allowed_origins_str.split(',')]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
