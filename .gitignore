@@ -1,3 +1,4 @@
 serviceAccountKey.json
 .idea/*
 server_logs.log
+.venv/
