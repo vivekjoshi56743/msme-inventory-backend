@@ -47,6 +47,6 @@ def health_check():
     return {"status": "ok"}
 
 @app.get("/metrics", tags=["Monitoring"])
-def metrics(current_user: dict = Depends(get_current_user)):
-    """A protected endpoint to get runtime metrics for the application."""
+def metrics():
+    """An open endpoint to get runtime metrics for the application."""
     return get_metrics()

@@ -2,7 +2,7 @@ import time
 from fastapi import Request
 from loguru import logger
 
-# In-memory storage for metrics. In a real app, use a proper system like Prometheus.
+# In-memory storage for metrics. In a real app,  proper system like Prometheus.
 METRICS = {
     "total_requests": 0,
     "crud_counts": {"create": 0, "read": 0, "update": 0, "delete": 0},
