@@ -5,17 +5,25 @@ from app.models.user import UserCreate # <-- Importing from our new models folde
 
 router = APIRouter()
 
+
 @router.post("/register", status_code=201)
 def create_user(user_data: UserCreate):
     """
     Endpoint to register a new user with email and password.
+    Assigns a default role of 'staff' to every new user.
     """
     try:
+        # Step 1: Create the user in Firebase Auth
         user = auth.create_user(
             email=user_data.email,
             password=user_data.password
         )
-        return {"message": f"Successfully created user: {user.uid}", "email": user.email}
+
+        # Step 2: Set a custom claim for the role (This is the new line)
+        auth.set_custom_user_claims(user.uid, {'role': 'staff'})
+
+        return {"message": f"Successfully created user: {user.uid} with role 'staff'", "email": user.email}
+
     except auth.EmailAlreadyExistsError:
         raise HTTPException(
             status_code=400,
