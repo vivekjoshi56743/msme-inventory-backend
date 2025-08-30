@@ -39,8 +39,8 @@ The API documentation can be viewed at: [https://msme-inventory-backend.onrender
 
 **Clone the Repository:**
 ```bash
-git clone https://github.com/your-username/msme-inventory-lite.git
-cd msme-inventory-lite/backend
+git clone https://github.com/vivekjoshi56743/msme-inventory-backend.git
+cd msme-inventory-backend/server
 ```
 **Install Dependencies:**
 ```bash
